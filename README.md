@@ -15,6 +15,8 @@ This repository contains the firmware for a secure, two-way environmental monito
 
 ---
 
+**[🔌 View Interactive Circuit Diagram on Cirkit Designer](https://app.cirkitdesigner.com/project/92c8706a-018b-42b5-a8bb-7b8d3b30e54d)**
+
 ## ⚡ Hardware Architecture
 
 | Component | ESP32 Pin | Engineering Notes |
