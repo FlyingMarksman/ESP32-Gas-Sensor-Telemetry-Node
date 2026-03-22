@@ -21,7 +21,7 @@ WiFiClientSecure wifiClientSecure;
 PubSubClient mqttClient(wifiClientSecure);
 
 const int sensorPin = 35; // Analog pin connected to the sensor output
-//const int speakerPin = 25; // Digital pin connected to the speaker for alerts
+const int speakerPin = 25; // Digital pin connected to the speaker for alerts
 
 float criticalThreshold = 10.0; // PPM threshold for critical alert
 float warningThreshold = 5.0; // PPM threshold for warning alert
@@ -97,37 +97,49 @@ void loop() {
     transmitHourlyAverage(millis());
   }
    // Check if it's time to transmit data and do so if needed
-   //alert(&status); // Update the alert status based on the current PPM reading
+   alert(&status); // Update the alert status based on the current PPM reading
 }
 
-/*void setupSpeaker() {
+void setupSpeaker() {
   pinMode(speakerPin, OUTPUT);
-}*/
+}
 
-/*
+
 void alert(int *status) {
   // Simple alert mechanism using the speaker
   // You can customize the tones and durations based on the status
+  unsigned long currentMillis = millis();
+  unsigned long alertInterval = 2000; // Alert every 2 seconds when in warning or critical status
+  unsigned long lastAlertTime = 0; // Timestamp of the last alert
   switch (*status) {
     case 1: // Safe
       digitalWrite(speakerPin, LOW); // No tone for safe status
       break;
     case 2: // Warning
-      digitalWrite(speakerPin, HIGH); // Play a longer tone at 2000 Hz
-      delay(3000); // Longer duration for warning
-      digitalWrite(speakerPin, LOW);
+      if(currentMillis - lastAlertTime >= alertInterval) {
+        digitalWrite(speakerPin, HIGH); // Play a short tone at 2000 Hz
+        
+      }if(currentMillis - lastAlertTime >= 1000) { // Short pause after the tone
+        digitalWrite(speakerPin, LOW); 
+        lastAlertTime = currentMillis; // Update the last alert time
+      }
       break;
     case 3: // Critical Alert
-      digitalWrite(speakerPin, HIGH); // Play a longer tone at 4000 Hz
-      delay(500); // Longer duration for critical alert
-      digitalWrite(speakerPin, LOW); 
-      delay(500); // Short pause between tones
+      if(currentMillis - lastAlertTime >= 500) {
+        digitalWrite(speakerPin, HIGH); // Play a short tone at 4000 Hz
+        if(currentMillis - lastAlertTime >= 250) { // Short pause after the tone
+          digitalWrite(speakerPin, LOW); 
+          lastAlertTime = currentMillis; // Update the last alert time
+        }
+        
+      }
       break;
     default:
       noTone(speakerPin); // Stop any tone if status is unknown
       break;
   }
-*/
+}
+
 
 void setup_wifi() {
   WiFiManager wifiManager;
