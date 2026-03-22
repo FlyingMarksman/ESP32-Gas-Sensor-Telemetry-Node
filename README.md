@@ -21,7 +21,7 @@ This repository contains the firmware for a secure, two-way environmental monito
 
 | Component | ESP32 Pin | Engineering Notes |
 | :--- | :--- | :--- |
-| **MICS-5524 (AOUT)** | `GPIO 35` | 12-bit ADC input. |
+| **MICS-5524 (AOUT)** | `GPIO 35` | 12-bit ADC input. (You need to have a voltage divider or a trimpot to protect the pin) |
 | **Buzzer Alarm** | `GPIO 25` | Driven via a 2N2222 NPN transistor (Low-Side Switch) with a 1kΩ base resistor. |
 | **Status LED (Green)** | `GPIO 18` | Indicates "Safe" status. Requires a 220Ω-330Ω current-limiting resistor to Ground. |
 | **Status LED (Yellow)**| `GPIO 17` | Indicates "Warning" status. Requires a 220Ω-330Ω current-limiting resistor to Ground. |
