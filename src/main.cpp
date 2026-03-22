@@ -5,17 +5,7 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include "secrets.h" // Include the secrets header file for WiFi and MQTT credentials
-/*
-things to do: 
-1.handle sudden wifi disconnection
-2. callback
-3. add more parameters to the JSON payload (eg alert status)
-4. datetime stamps for the MQTT messages (can be done in the cloud with the timestamp of message arrival, but can also be done on the device if we want to have more control over it)
-5. callbacks for updates from the cloud (eg change in alert thresholds, or change in transmission interval)
-6. average the sensor readings over a short time window to smooth out noise (eg take 5 readings every 2 seconds and average them before transmitting) DONE
-7. 1 hour average reading DONE
-8. speaker alerts for different levels of CO concentration (eg safe, warning, critical alert)
-*/
+
 
 WiFiClientSecure wifiClientSecure;
 PubSubClient mqttClient(wifiClientSecure);
@@ -75,7 +65,7 @@ void setup() {
   Serial.begin(115200);
   // put your setup code here, to run once:
   setup_wifi();
-  //setupSpeaker();
+  setupSpeaker();
   warmUpSensor(millis()); // Start the warm-up timer
   mqttClient.setCallback(callback); // Set the MQTT callback function
   mqttClient.publish("SensorStatus", "Warming up sensor..."); // Publish a status message to MQTT
@@ -84,7 +74,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
-  reconnect_wifi(); // Call the callback function to check for incoming MQTT messages (if any)
+  reconnect_wifi(); // Check and reconnect WiFi if needed
   if (!mqttClient.connected()) {
     connectMQTT(); // Reconnect to MQTT if the connection is lost
   }
@@ -200,18 +190,18 @@ void connectMQTT() {
 float calculatePPM(float sensorReading){
   float vPin = (sensorReading / 4095.0) * 3.3; // Convert ADC value to voltage 4095 for 12-bit ADC(according to datasheet), 3.3V reference
   
-  // 2. Un-scale the Voltage Divider from potentiometer to get the actual sensor voltage
+  //Un-scale the Voltage Divider from potentiometer to get the actual sensor voltage
   float vOut = vPin * 1.5; 
 
-  // 3. Divide-by-Zero Safety Net
+  //Divide-by-Zero Safety Net
   if (vOut <= 0) {
     vOut = 0.001; 
   }
 
-  // 4. Calculate Resistance based on the 5V power rail
+  //Calculate Resistance based on the 5V power rail
   float sResistance = 8.33 * ((5.1 - vOut) / vOut);
   
-  // 5. Calculate Ratio and PPM
+  //Calculate Ratio and PPM
   float ratio = sResistance / baseline;
   float ppm = 1.2 * pow(ratio, -1.35); // CO Power Law with sensitivity factor of 1.2
 
