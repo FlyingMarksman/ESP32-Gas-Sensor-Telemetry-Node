@@ -77,6 +77,8 @@ void setup() {
 void loop() {
   // put your main code here, to run repeatedly:
   float ppm = calculatePPM(readSensor()); // Read the sensor and calculate PPM
+  
+  blinkLEDs(&status); // Update the LEDs based on the current status
   reconnect_wifi(); // Check and reconnect WiFi if needed
   if (!mqttClient.connected()) {
     connectMQTT(); // Reconnect to MQTT if the connection is lost
@@ -92,11 +94,9 @@ void loop() {
       transmitData(ppm);
       lastMsg = millis();// Update the last message timestamp
     }
-    transmitHourlyAverage(millis());
+    transmitHourlyAverage(millis());// Check if it's time to transmit data and do so if needed 
   }
-   // Check if it's time to transmit data and do so if needed
-   alert(&status); // Update the alert status based on the current PPM reading
-   blinkLEDs(&status); // Update the LED status based on the current alert status
+  alert(&status); // Update the alert status based on the current PPM reading
 }
 
 void setupSpeaker() {
@@ -105,6 +105,7 @@ void setupSpeaker() {
 
 void setupLEDs() {
   pinMode(greenLEDPin, OUTPUT);
+  digitalWrite(greenLEDPin, HIGH); // Start with all LEDs on to indicate initialization
   pinMode(yellowLEDPin, OUTPUT);
   pinMode(redLEDPin, OUTPUT);
 }
@@ -208,7 +209,8 @@ float calculatePPM(float sensorReading){
   //Calculate Ratio and PPM
   float ratio = sResistance / baseline;
   float ppm = 1.2 * pow(ratio, -1.35); // CO Power Law with sensitivity factor of 1.2
-
+  Serial.println("Raw Reading: " + String(sensorReading)); // Print the calculated PPM to the serial monitor for debugging
+  Serial.println("Calculated PPM: " + String(ppm)); // Print the calculated PPM to the serial monitor for debugging
    // Call the alert function to update the status based on the current PPM reading
    if(ppm >= criticalThreshold) {
      status = 3;// Critical Alert
