@@ -16,12 +16,13 @@ const int speakerPin = 25; // Digital pin connected to the speaker for alerts
 const int greenLEDPin = 18; // Digital pin connected to the green LED for safe status
 const int yellowLEDPin = 17; // Digital pin connected to the yellow LED for warning status
 const int redLEDPin = 19; // Digital pin connected to the red LED for critical alert
+const int redLEDPin = 19; // Digital pin connected to the red LED for critical alert
 
 float criticalThreshold = 10.0; // PPM threshold for critical alert
 float warningThreshold = 5.0; // PPM threshold for warning alert
 int status = 0; // 1: Safe, 2: Warning, 3: Critical Alert
 
-const char* mqtt_server = SECRET_MQTT_SERVER; 
+const char* mqtt_server = SECRET_MQTT_SERVER;
 int mqtt_port = SECRET_MQTT_PORT;
 const char* mqtt_user = SECRET_MQTT_USER; 
 const char* mqtt_password = SECRET_MQTT_PASS;
@@ -67,7 +68,6 @@ void setup() {
   setupLEDs();
   // put your setup code here, to run once:
   setup_wifi();
-  setupSpeaker();
   warmUpSensor(millis()); // Start the warm-up timer
   mqttClient.setCallback(callback); // Set the MQTT callback function
   mqttClient.publish("SensorStatus", "Warming up sensor..."); // Publish a status message to MQTT
@@ -76,6 +76,9 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  float ppm = calculatePPM(readSensor()); // Read the sensor and calculate PPM
+  
+  blinkLEDs(&status); // Update the LEDs based on the current status
   float ppm = calculatePPM(readSensor()); // Read the sensor and calculate PPM
   
   blinkLEDs(&status); // Update the LEDs based on the current status
@@ -91,11 +94,14 @@ void loop() {
   else{
     if(millis() - lastMsg >= interval){
       ppm = calculatePPM(readSensor()); // Read the sensor and calculate PPM
+      ppm = calculatePPM(readSensor()); // Read the sensor and calculate PPM
       transmitData(ppm);
       lastMsg = millis();// Update the last message timestamp
     }
     transmitHourlyAverage(millis());// Check if it's time to transmit data and do so if needed 
+    transmitHourlyAverage(millis());// Check if it's time to transmit data and do so if needed 
   }
+  alert(&status); // Update the alert status based on the current PPM reading
   alert(&status); // Update the alert status based on the current PPM reading
 }
 
@@ -105,6 +111,7 @@ void setupSpeaker() {
 
 void setupLEDs() {
   pinMode(greenLEDPin, OUTPUT);
+  digitalWrite(greenLEDPin, HIGH); // Start with all LEDs on to indicate initialization
   digitalWrite(greenLEDPin, HIGH); // Start with all LEDs on to indicate initialization
   pinMode(yellowLEDPin, OUTPUT);
   pinMode(redLEDPin, OUTPUT);
@@ -116,14 +123,19 @@ void alert(int *status) {
   unsigned long currentMillis = millis();
   unsigned long alertInterval = 2000; // Alert every 2 seconds when in warning or critical status
   static unsigned long lastAlertTime = 0; // Timestamp of the last alert
+  static unsigned long lastAlertTime = 0; // Timestamp of the last alert
   switch (*status) {
     case 1: // Safe
       digitalWrite(speakerPin, LOW); // No tone for safe status
       break;
     case 2: // Warning
       if(millis() % 2000 < 1000) { // Play a short tone at 2000 Hz every 2 seconds
+      if(millis() % 2000 < 1000) { // Play a short tone at 2000 Hz every 2 seconds
         digitalWrite(speakerPin, HIGH); // Play a short tone at 2000 Hz
         
+      } 
+      else {
+        digitalWrite(speakerPin, LOW); // No tone for the other second
       } 
       else {
         digitalWrite(speakerPin, LOW); // No tone for the other second
@@ -131,11 +143,18 @@ void alert(int *status) {
       break;
     case 3: // Critical Alert
       if(millis() % 500 < 250) { // Play a short tone at 4000 Hz every 500 ms
+      if(millis() % 500 < 250) { // Play a short tone at 4000 Hz every 500 ms
         digitalWrite(speakerPin, HIGH); // Play a short tone at 4000 Hz
       } 
       else {
         digitalWrite(speakerPin, LOW); // No tone for the other 250 ms
+      } 
+      else {
+        digitalWrite(speakerPin, LOW); // No tone for the other 250 ms
       }
+      break;  
+      default:
+        noTone(speakerPin); // Stop any tone if status is unknown
       break;  
       default:
         noTone(speakerPin); // Stop any tone if status is unknown
@@ -144,6 +163,11 @@ void alert(int *status) {
       
     
   }
+      }
+      
+    
+  }
+
 
 
 
@@ -177,6 +201,7 @@ void connectMQTT() {
   while(!mqttClient.connected()) {
     Serial.println("Connecting to MQTT...");
     if (mqttClient.connect("testClient", mqtt_user, mqtt_password)) {
+    if (mqttClient.connect("testClient", mqtt_user, mqtt_password)) {
       Serial.println("Connected to MQTT broker!");
       // Subscribe to topics or publish messages as needed
       mqttClient.subscribe("Sensor/Commands"); // Subscribe to a topic for receiving commands (e.g., threshold updates)
@@ -209,6 +234,8 @@ float calculatePPM(float sensorReading){
   //Calculate Ratio and PPM
   float ratio = sResistance / baseline;
   float ppm = 1.2 * pow(ratio, -1.35); // CO Power Law with sensitivity factor of 1.2
+  Serial.println("Raw Reading: " + String(sensorReading)); // Print the calculated PPM to the serial monitor for debugging
+  Serial.println("Calculated PPM: " + String(ppm)); // Print the calculated PPM to the serial monitor for debugging
   Serial.println("Raw Reading: " + String(sensorReading)); // Print the calculated PPM to the serial monitor for debugging
   Serial.println("Calculated PPM: " + String(ppm)); // Print the calculated PPM to the serial monitor for debugging
    // Call the alert function to update the status based on the current PPM reading
@@ -547,6 +574,7 @@ float calculatePPM(float sensorReading){
    } else if(ppm >= warningThreshold) {
      status = 2; // Warning
    } else {
+    status = 1; // Safe
     status = 1; // Safe
    }
    hourlyTotal += ppm; // Add the current PPM reading to the hourly total
