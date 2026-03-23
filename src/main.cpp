@@ -76,6 +76,7 @@ void setup() {
 
 void loop() {
   // put your main code here, to run repeatedly:
+  float ppm = calculatePPM(readSensor()); // Read the sensor and calculate PPM
   reconnect_wifi(); // Check and reconnect WiFi if needed
   if (!mqttClient.connected()) {
     connectMQTT(); // Reconnect to MQTT if the connection is lost
@@ -87,7 +88,7 @@ void loop() {
   }
   else{
     if(millis() - lastMsg >= interval){
-      float ppm = calculatePPM(readSensor()); // Read the sensor and calculate PPM
+      ppm = calculatePPM(readSensor()); // Read the sensor and calculate PPM
       transmitData(ppm);
       lastMsg = millis();// Update the last message timestamp
     }
@@ -119,29 +120,30 @@ void alert(int *status) {
       digitalWrite(speakerPin, LOW); // No tone for safe status
       break;
     case 2: // Warning
-      if(currentMillis - lastAlertTime >= alertInterval) {
+      if(millis() % 2000 < 1000) { // Play a short tone at 2000 Hz every 2 seconds
         digitalWrite(speakerPin, HIGH); // Play a short tone at 2000 Hz
         
-      }if(currentMillis - lastAlertTime >= 1000) { // Short pause after the tone
-        digitalWrite(speakerPin, LOW); 
-        lastAlertTime = currentMillis; // Update the last alert time
+      } 
+      else {
+        digitalWrite(speakerPin, LOW); // No tone for the other second
       }
       break;
     case 3: // Critical Alert
-      if(currentMillis - lastAlertTime >= 500) {
+      if(millis() % 500 < 250) { // Play a short tone at 4000 Hz every 500 ms
         digitalWrite(speakerPin, HIGH); // Play a short tone at 4000 Hz
-        if(currentMillis - lastAlertTime >= 250) { // Short pause after the tone
-          digitalWrite(speakerPin, LOW); 
-          lastAlertTime = currentMillis; // Update the last alert time
-        }
-        
+      } 
+      else {
+        digitalWrite(speakerPin, LOW); // No tone for the other 250 ms
       }
+      break;  
+      default:
+        noTone(speakerPin); // Stop any tone if status is unknown
       break;
-    default:
-      noTone(speakerPin); // Stop any tone if status is unknown
-      break;
+      }
+      
+    
   }
-}
+
 
 
 void setup_wifi() {
