@@ -15,7 +15,7 @@ const int speakerPin = 25; // Digital pin connected to the speaker for alerts
 
 const int greenLEDPin = 18; // Digital pin connected to the green LED for safe status
 const int yellowLEDPin = 17; // Digital pin connected to the yellow LED for warning status
-const int redLEDPin = 19; // Digital pin connected to the red LED for
+const int redLEDPin = 19; // Digital pin connected to the red LED for critical alert
 
 float criticalThreshold = 10.0; // PPM threshold for critical alert
 float warningThreshold = 5.0; // PPM threshold for warning alert
@@ -60,9 +60,11 @@ void alert(int *status);
 void transmitHourlyAverage(unsigned long currentMillis);
 void reconnect_wifi();
 void blinkLEDs(int *status);
+void setupLEDs();
 
 void setup() {
   Serial.begin(115200);
+  setupLEDs();
   // put your setup code here, to run once:
   setup_wifi();
   setupSpeaker();
@@ -111,7 +113,7 @@ void alert(int *status) {
   // You can customize the tones and durations based on the status
   unsigned long currentMillis = millis();
   unsigned long alertInterval = 2000; // Alert every 2 seconds when in warning or critical status
-  unsigned long lastAlertTime = 0; // Timestamp of the last alert
+  static unsigned long lastAlertTime = 0; // Timestamp of the last alert
   switch (*status) {
     case 1: // Safe
       digitalWrite(speakerPin, LOW); // No tone for safe status
@@ -171,7 +173,7 @@ void connectMQTT() {
 
   while(!mqttClient.connected()) {
     Serial.println("Connecting to MQTT...");
-    if (mqttClient.connect("ESP32Client", mqtt_user, mqtt_password)) {
+    if (mqttClient.connect("testClient", mqtt_user, mqtt_password)) {
       Serial.println("Connected to MQTT broker!");
       // Subscribe to topics or publish messages as needed
       mqttClient.subscribe("Sensor/Commands"); // Subscribe to a topic for receiving commands (e.g., threshold updates)
@@ -207,15 +209,11 @@ float calculatePPM(float sensorReading){
 
    // Call the alert function to update the status based on the current PPM reading
    if(ppm >= criticalThreshold) {
-     status = 3;// Safe
-     digitalWrite(greenLEDPin, LOW);
-     digitalWrite(yellowLEDPin, LOW);
-     digitalWrite(redLEDPin, HIGH);
-
+     status = 3;// Critical Alert
    } else if(ppm >= warningThreshold) {
      status = 2; // Warning
    } else {
-    status = 1; // Critical Alert
+    status = 1; // Safe
    }
    hourlyTotal += ppm; // Add the current PPM reading to the hourly total
    hourlyCount++; // Increment the count of readings for the current hour
@@ -307,12 +305,10 @@ void blinkLEDs(int *status) {
       digitalWrite(redLEDPin, LOW);
       break;
     case 2: // Warning
-      digitalWrite(greenLEDPin, LOW);
       digitalWrite(yellowLEDPin, HIGH);
       digitalWrite(redLEDPin, LOW);
       break;
     case 3: // Critical Alert
-      digitalWrite(greenLEDPin, LOW);
       digitalWrite(yellowLEDPin, LOW);
       if(millis() % 1000 < 500) { // Blink the red LED every second
         digitalWrite(redLEDPin, HIGH);
@@ -321,7 +317,6 @@ void blinkLEDs(int *status) {
       }
       break;
     default:
-      digitalWrite(greenLEDPin, LOW);
       digitalWrite(yellowLEDPin, LOW);
       digitalWrite(redLEDPin, LOW);
   }
