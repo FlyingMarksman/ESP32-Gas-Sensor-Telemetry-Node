@@ -136,10 +136,7 @@ void alert(int *status) {
       } 
       else {
         digitalWrite(speakerPin, LOW); // No tone for the other second
-      } 
-      else {
-        digitalWrite(speakerPin, LOW); // No tone for the other second
-      }
+      }     
       break;
     case 3: // Critical Alert
       if(millis() % 500 < 250) { // Play a short tone at 4000 Hz every 500 ms
@@ -149,16 +146,10 @@ void alert(int *status) {
       else {
         digitalWrite(speakerPin, LOW); // No tone for the other 250 ms
       } 
-      else {
-        digitalWrite(speakerPin, LOW); // No tone for the other 250 ms
-      }
       break;  
       default:
         noTone(speakerPin); // Stop any tone if status is unknown
       break;  
-      default:
-        noTone(speakerPin); // Stop any tone if status is unknown
-      break;
       }
       
     
@@ -200,11 +191,10 @@ void connectMQTT() {
 
   while(!mqttClient.connected()) {
     Serial.println("Connecting to MQTT...");
-    if (mqttClient.connect("testClient", mqtt_user, mqtt_password)) {
+
     if (mqttClient.connect("testClient", mqtt_user, mqtt_password)) {
       Serial.println("Connected to MQTT broker!");
-      // Subscribe to topics or publish messages as needed
-      mqttClient.subscribe("Sensor/Commands"); // Subscribe to a topic for receiving commands (e.g., threshold updates)
+      // Subscribe to topicsr/Commands"); // Subscribe to a topic for receiving commands (e.g., threshold updates)
     } else {
       Serial.print("Failed to connect to MQTT broker, rc=");
       Serial.print(mqttClient.state());
