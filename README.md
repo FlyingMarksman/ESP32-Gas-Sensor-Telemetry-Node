@@ -75,7 +75,7 @@ Accepts a JSON payload to update the warning and critical thresholds. The device
 ### 🚀 Local Installation & Setup
 ## 1. Clone the repository:
 ```bash
-git clone [https://github.com/yourusername/ESP32-Gas-Sensor-Telemetry-Node.git](https://github.com/yourusername/ESP32-Gas-Sensor-Telemetry-Node.git)
+git clone https://github.com/james-arcen/ESP32-Gas-Sensor-Telemetry-Node.git
 ```
 
 ## 2. Install Required Libraries (Arduino IDE / PlatformIO):
